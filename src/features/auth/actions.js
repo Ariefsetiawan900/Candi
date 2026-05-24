@@ -59,7 +59,7 @@ export async function logoutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/login");
+  redirect("/auth/login");
 }
 
 export async function forgotPasswordAction(formData) {
@@ -69,10 +69,13 @@ export async function forgotPasswordAction(formData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${appUrl()}/auth/reset-password`,
-    captchaToken: formData.captchaToken,
-  });
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    parsed.data.email,
+    {
+      redirectTo: `${appUrl()}/auth/reset-password`,
+      captchaToken: formData.captchaToken,
+    }
+  );
   if (error) return { error: error.message };
 
   return { ok: true };
