@@ -1,10 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -13,15 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatusBadge } from "@/components/common/status-badge";
+import { PaginationControls } from "@/components/common/pagination-controls";
+import { FilterDrawer } from "@/components/common/filter-drawer";
 import { OrderActionsCell } from "@/features/orders/order-actions-cell";
 import { ExportCsvButton } from "@/features/orders/export-csv-button";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -29,16 +31,27 @@ import { useUser } from "@/components/providers/user-provider";
 import { formatDate } from "@/lib/utils/format-date";
 import { ORDER_STATUS_LABEL } from "@/lib/constants/order-status";
 
-const PAGE_SIZE = 10;
-
-export function OrdersTable({ orders, availableStatuses }) {
+export function OrdersTable({
+  orders,
+  availableStatuses,
+  tab,
+  filenamePrefix,
+  search,
+  onSearchChange,
+  statusFilter,
+  onStatusFilterChange,
+  page,
+  onPageChange,
+  pageSize,
+  onPageSizeChange,
+  dateFrom,
+  onDateFromChange,
+  dateTo,
+  onDateToChange,
+  onResetFilters,
+}) {
   const { profile } = useUser();
   const isAdmin = profile?.role === "admin";
-  console.log("profile?.role ", profile?.role);
-
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [page, setPage] = useState(1);
 
   const debouncedSearch = useDebounce(search, 250);
 
@@ -51,57 +64,88 @@ export function OrdersTable({ orders, availableStatuses }) {
         o.menu.toLowerCase().includes(q) ||
         o.package.toLowerCase().includes(q) ||
         o.order_no.toLowerCase().includes(q);
-      const matchesStatus = statusFilter === "all" || o.status === statusFilter;
-      return matchesQuery && matchesStatus;
+      const matchesStatus =
+        !statusFilter || statusFilter === "all" || o.status === statusFilter;
+      const matchesFrom = !dateFrom || o.order_date >= dateFrom;
+      const matchesTo = !dateTo || o.order_date <= dateTo;
+      return matchesQuery && matchesStatus && matchesFrom && matchesTo;
     });
-  }, [orders, debouncedSearch, statusFilter]);
+  }, [orders, debouncedSearch, statusFilter, dateFrom, dateTo]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const pageItems = filtered.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE
-  );
+  const pageItems = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  const hasActiveFilters =
+    (statusFilter && statusFilter !== "all") || !!dateFrom || !!dateTo;
 
   return (
     <div className="space-y-3">
+      {/* Toolbar */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative w-full sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder="Search orders…"
-              className="pl-8"
-            />
-          </div>
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-45">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              {availableStatuses.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {ORDER_STATUS_LABEL[s] ?? s}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="relative w-full sm:max-w-xs">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search orders…"
+            className="pl-8"
+          />
         </div>
-        <ExportCsvButton orders={filtered} />
+
+        <div className="flex items-center gap-2">
+          <ExportCsvButton orders={filtered} filenamePrefix={filenamePrefix} />
+          <FilterDrawer
+            hasActiveFilters={hasActiveFilters}
+            onReset={onResetFilters}
+          >
+            {/* Status filter — both tabs */}
+            <div className="space-y-1.5">
+              <Label className="text-sm font-medium">Status</Label>
+              <Select
+                value={statusFilter || "all"}
+                onValueChange={onStatusFilterChange}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  {availableStatuses.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {ORDER_STATUS_LABEL[s] ?? s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date range — history tab only */}
+            {tab === "history" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Order date from</Label>
+                  <Input
+                    type="date"
+                    value={dateFrom ?? ""}
+                    onChange={(e) => onDateFromChange(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Order date to</Label>
+                  <Input
+                    type="date"
+                    value={dateTo ?? ""}
+                    onChange={(e) => onDateToChange(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
+          </FilterDrawer>
+        </div>
       </div>
 
+      {/* Table */}
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
@@ -124,7 +168,7 @@ export function OrdersTable({ orders, availableStatuses }) {
                   <EmptyState
                     title="No orders"
                     description={
-                      search || statusFilter !== "all"
+                      search || (statusFilter && statusFilter !== "all") || dateFrom || dateTo
                         ? "Try adjusting your filters."
                         : "Orders will appear here once they're created."
                     }
@@ -135,23 +179,19 @@ export function OrdersTable({ orders, availableStatuses }) {
               pageItems.map((o, idx) => (
                 <TableRow key={o.id}>
                   <TableCell className="text-muted-foreground">
-                    {(safePage - 1) * PAGE_SIZE + idx + 1}
+                    {(safePage - 1) * pageSize + idx + 1}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-medium">{o.customer_name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {o.order_no}
-                      </span>
+                      <span className="text-xs text-muted-foreground">{o.order_no}</span>
                     </div>
                   </TableCell>
                   <TableCell>{o.menu}</TableCell>
                   <TableCell>{o.package}</TableCell>
                   <TableCell>{formatDate(o.order_date)}</TableCell>
                   <TableCell>{formatDate(o.pickup_date)}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {o.quantity}
-                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{o.quantity}</TableCell>
                   <TableCell>
                     <StatusBadge status={o.status} />
                   </TableCell>
@@ -167,36 +207,15 @@ export function OrdersTable({ orders, availableStatuses }) {
         </Table>
       </div>
 
-      {filtered.length > PAGE_SIZE && (
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">
-            Showing {(safePage - 1) * PAGE_SIZE + 1}–
-            {Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
-            {filtered.length}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={safePage === 1}
-            >
-              Previous
-            </Button>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              Page {safePage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safePage === totalPages}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* Pagination */}
+      <PaginationControls
+        page={safePage}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        totalItems={filtered.length}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
     </div>
   );
 }

@@ -7,15 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Modal } from "@/components/common/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,10 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { orderSchema } from "@/lib/validations/order";
-import {
-  ORDER_STATUSES,
-  ORDER_STATUS_LABEL,
-} from "@/lib/constants/order-status";
+import { ORDER_STATUSES, ORDER_STATUS_LABEL } from "@/lib/constants/order-status";
 import { todayISO } from "@/lib/utils/format-date";
 import { createOrderAction, updateOrderAction } from "@/features/orders/actions";
 
@@ -44,10 +33,6 @@ const CREATE_DEFAULTS = {
   status: "pending",
 };
 
-// Props:
-//   order      — if provided, opens in edit mode (no internal trigger button)
-//   open       — controlled open state (edit mode)
-//   onOpenChange — controlled handler (edit mode)
 export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
   const isEditMode = !!order;
   const router = useRouter();
@@ -61,31 +46,8 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
     else setInternalOpen(val);
   }
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    reset,
-    formState: { errors },
-  } = useForm({
-    resolver: zodResolver(orderSchema),
-    defaultValues: isEditMode
-      ? {
-          customer_name: order.customer_name,
-          menu: order.menu,
-          package: order.package,
-          order_date: order.order_date,
-          pickup_date: order.pickup_date,
-          quantity: order.quantity,
-          status: order.status,
-        }
-      : CREATE_DEFAULTS,
-  });
-
-  // Re-populate form when order changes (e.g. different row opened)
-  useEffect(() => {
-    if (isEditMode && open) {
-      reset({
+  const editDefaults = isEditMode
+    ? {
         customer_name: order.customer_name,
         menu: order.menu,
         package: order.package,
@@ -93,9 +55,22 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
         pickup_date: order.pickup_date,
         quantity: order.quantity,
         status: order.status,
-      });
-    }
-  }, [open, isEditMode, order, reset]);
+      }
+    : CREATE_DEFAULTS;
+
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm({
+    resolver: zodResolver(orderSchema),
+    defaultValues: isEditMode ? editDefaults : CREATE_DEFAULTS,
+  });
+
+  useEffect(() => {
+    if (isEditMode && open) reset(editDefaults);
+  }, [open, isEditMode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleClose() {
+    setOpen(false);
+    reset(isEditMode ? editDefaults : CREATE_DEFAULTS);
+  }
 
   function onSubmit(data) {
     startTransition(async () => {
@@ -103,10 +78,7 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
         ? await updateOrderAction({ id: order.id, ...data })
         : await createOrderAction(data);
 
-      if (res?.error) {
-        toast.error(res.error);
-        return;
-      }
+      if (res?.error) { toast.error(res.error); return; }
 
       toast.success(isEditMode ? "Order updated" : "Order created");
       if (!isEditMode) reset();
@@ -115,53 +87,37 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
     });
   }
 
-  const dialog = (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        if (isPending) return;
-        setOpen(o);
-        if (!o) reset(isEditMode ? {
-          customer_name: order.customer_name,
-          menu: order.menu,
-          package: order.package,
-          order_date: order.order_date,
-          pickup_date: order.pickup_date,
-          quantity: order.quantity,
-          status: order.status,
-        } : CREATE_DEFAULTS);
-      }}
-    >
+  return (
+    <>
       {!isEditMode && (
-        <DialogTrigger asChild>
-          <Button>
-            <Plus className="size-4" />
-            Create order
-          </Button>
-        </DialogTrigger>
+        <Button onClick={() => setInternalOpen(true)}>
+          <Plus className="size-4" />
+          Create order
+        </Button>
       )}
-      <DialogContent
-        className="sm:max-w-md"
-        onInteractOutside={(e) => { if (isPending) e.preventDefault(); }}
-        onEscapeKeyDown={(e) => { if (isPending) e.preventDefault(); }}
+
+      <Modal
+        open={open}
+        onOpenChange={(o) => { if (isPending) return; o ? setOpen(true) : handleClose(); }}
+        size="md"
+        contentProps={{
+          onInteractOutside: (e) => { if (isPending) e.preventDefault(); },
+          onEscapeKeyDown: (e) => { if (isPending) e.preventDefault(); },
+        }}
       >
-        <DialogHeader>
-          <DialogTitle>{isEditMode ? "Edit order" : "New order"}</DialogTitle>
-          <DialogDescription>
-            {isEditMode
-              ? "Update the order details below."
-              : "Fill in the customer's order details."}
-          </DialogDescription>
-        </DialogHeader>
+        <Modal.Title>
+          {isEditMode ? "Edit order" : "New order"}
+        </Modal.Title>
+        <Modal.Description>
+          {isEditMode ? "Update the order details below." : "Fill in the customer's order details."}
+        </Modal.Description>
 
         <form className="space-y-3" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="space-y-1.5">
             <Label htmlFor="customer_name">Customer name</Label>
             <Input id="customer_name" {...register("customer_name")} />
             {errors.customer_name && (
-              <p className="text-xs text-destructive">
-                {errors.customer_name.message}
-              </p>
+              <p className="text-xs text-destructive">{errors.customer_name.message}</p>
             )}
           </div>
 
@@ -177,9 +133,7 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
               <Label htmlFor="package">Package</Label>
               <Input id="package" {...register("package")} />
               {errors.package && (
-                <p className="text-xs text-destructive">
-                  {errors.package.message}
-                </p>
+                <p className="text-xs text-destructive">{errors.package.message}</p>
               )}
             </div>
           </div>
@@ -189,18 +143,14 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
               <Label htmlFor="order_date">Order date</Label>
               <Input id="order_date" type="date" {...register("order_date")} />
               {errors.order_date && (
-                <p className="text-xs text-destructive">
-                  {errors.order_date.message}
-                </p>
+                <p className="text-xs text-destructive">{errors.order_date.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pickup_date">Pickup date</Label>
               <Input id="pickup_date" type="date" {...register("pickup_date")} />
               {errors.pickup_date && (
-                <p className="text-xs text-destructive">
-                  {errors.pickup_date.message}
-                </p>
+                <p className="text-xs text-destructive">{errors.pickup_date.message}</p>
               )}
             </div>
           </div>
@@ -208,16 +158,9 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                {...register("quantity")}
-              />
+              <Input id="quantity" type="number" min="1" {...register("quantity")} />
               {errors.quantity && (
-                <p className="text-xs text-destructive">
-                  {errors.quantity.message}
-                </p>
+                <p className="text-xs text-destructive">{errors.quantity.message}</p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -243,24 +186,8 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
             </div>
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setOpen(false);
-                reset(isEditMode ? {
-                  customer_name: order.customer_name,
-                  menu: order.menu,
-                  package: order.package,
-                  order_date: order.order_date,
-                  pickup_date: order.pickup_date,
-                  quantity: order.quantity,
-                  status: order.status,
-                } : CREATE_DEFAULTS);
-              }}
-              disabled={isPending}
-            >
+          <Modal.Footer>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isPending}>
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
@@ -269,17 +196,11 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
                   <Loader2 className="size-4 animate-spin" />
                   {isEditMode ? "Saving…" : "Creating…"}
                 </>
-              ) : isEditMode ? (
-                "Save changes"
-              ) : (
-                "Create order"
-              )}
+              ) : isEditMode ? "Save changes" : "Create order"}
             </Button>
-          </DialogFooter>
+          </Modal.Footer>
         </form>
-      </DialogContent>
-    </Dialog>
+      </Modal>
+    </>
   );
-
-  return dialog;
 }

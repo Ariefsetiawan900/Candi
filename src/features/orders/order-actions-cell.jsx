@@ -6,16 +6,7 @@ import { CheckCircle, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ModalConfirm } from "@/components/common/modal-confirm";
 import { OrderFormDialog } from "@/features/orders/order-form-dialog";
 import { updateOrderStatusAction, deleteOrderAction } from "@/features/orders/actions";
 
@@ -32,10 +23,7 @@ export function OrderActionsCell({ order }) {
   function handleComplete() {
     startComplete(async () => {
       const res = await updateOrderStatusAction({ id: order.id, status: "completed" });
-      if (res?.error) {
-        toast.error(res.error);
-        return;
-      }
+      if (res?.error) { toast.error(res.error); return; }
       toast.success("Order marked as completed");
       setCompleteOpen(false);
       router.refresh();
@@ -45,10 +33,7 @@ export function OrderActionsCell({ order }) {
   function handleDelete() {
     startDelete(async () => {
       const res = await deleteOrderAction({ id: order.id });
-      if (res?.error) {
-        toast.error(res.error);
-        return;
-      }
+      if (res?.error) { toast.error(res.error); return; }
       toast.success("Order deleted");
       setDeleteOpen(false);
       router.refresh();
@@ -69,28 +54,16 @@ export function OrderActionsCell({ order }) {
           >
             <CheckCircle className="size-4" />
           </Button>
-
-          <AlertDialog open={completeOpen} onOpenChange={setCompleteOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Selesaikan pesanan?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Pesanan <strong>{order.order_no}</strong> akan ditandai sebagai{" "}
-                  <strong>Completed</strong> dan dipindahkan ke tab History.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isPendingComplete}>Batal</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleComplete}
-                  disabled={isPendingComplete}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {isPendingComplete ? "Memproses…" : "Selesaikan"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <ModalConfirm
+            open={completeOpen}
+            onOpenChange={setCompleteOpen}
+            title="Selesaikan pesanan?"
+            description={<>Pesanan <strong>{order.order_no}</strong> akan ditandai sebagai <strong>Completed</strong> dan dipindahkan ke tab History.</>}
+            confirmLabel="Selesaikan"
+            confirmClassName="bg-emerald-600 hover:bg-emerald-700"
+            onConfirm={handleComplete}
+            isPending={isPendingComplete}
+          />
         </>
       )}
 
@@ -103,12 +76,7 @@ export function OrderActionsCell({ order }) {
       >
         <Pencil className="size-4" />
       </Button>
-
-      <OrderFormDialog
-        order={order}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-      />
+      <OrderFormDialog order={order} open={editOpen} onOpenChange={setEditOpen} />
 
       <Button
         variant="ghost"
@@ -120,28 +88,16 @@ export function OrderActionsCell({ order }) {
       >
         <Trash2 className="size-4" />
       </Button>
-
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Hapus pesanan?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Pesanan <strong>{order.order_no}</strong> ({order.customer_name}) akan
-              dihapus permanen dan tidak dapat dikembalikan.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPendingDelete}>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isPendingDelete}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {isPendingDelete ? "Menghapus…" : "Hapus"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ModalConfirm
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Hapus pesanan?"
+        description={<>Pesanan <strong>{order.order_no}</strong> ({order.customer_name}) akan dihapus permanen dan tidak dapat dikembalikan.</>}
+        confirmLabel="Hapus"
+        confirmClassName="bg-destructive hover:bg-destructive/90"
+        onConfirm={handleDelete}
+        isPending={isPendingDelete}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { StatCards } from "@/features/orders/stat-cards";
 import { OrdersPage } from "@/features/orders/orders-page";
@@ -53,7 +54,9 @@ export default async function HomePage() {
         today={todayCountRes.count ?? 0}
       />
 
-      <OrdersPage activeOrders={activeOrders} historyOrders={historyOrders} />
+      <Suspense>
+        <OrdersPage activeOrders={activeOrders} historyOrders={historyOrders} />
+      </Suspense>
     </div>
   );
 }
