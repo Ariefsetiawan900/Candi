@@ -119,8 +119,17 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
     <Dialog
       open={open}
       onOpenChange={(o) => {
+        if (isPending) return;
         setOpen(o);
-        if (!o && !isEditMode) reset();
+        if (!o) reset(isEditMode ? {
+          customer_name: order.customer_name,
+          menu: order.menu,
+          package: order.package,
+          order_date: order.order_date,
+          pickup_date: order.pickup_date,
+          quantity: order.quantity,
+          status: order.status,
+        } : CREATE_DEFAULTS);
       }}
     >
       {!isEditMode && (
@@ -131,7 +140,11 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md"
+        onInteractOutside={(e) => { if (isPending) e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (isPending) e.preventDefault(); }}
+      >
         <DialogHeader>
           <DialogTitle>{isEditMode ? "Edit order" : "New order"}</DialogTitle>
           <DialogDescription>
@@ -234,7 +247,18 @@ export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                reset(isEditMode ? {
+                  customer_name: order.customer_name,
+                  menu: order.menu,
+                  package: order.package,
+                  order_date: order.order_date,
+                  pickup_date: order.pickup_date,
+                  quantity: order.quantity,
+                  status: order.status,
+                } : CREATE_DEFAULTS);
+              }}
               disabled={isPending}
             >
               Cancel
