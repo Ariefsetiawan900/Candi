@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { forgotPasswordSchema } from "@/lib/validations/auth";
@@ -11,10 +12,14 @@ import { forgotPasswordAction } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Captcha } from "@/components/common/captcha";
 
 export function ForgotPasswordForm() {
   const [isPending, startTransition] = useTransition();
   const [sent, setSent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+
   const {
     register,
     handleSubmit,
@@ -23,9 +28,11 @@ export function ForgotPasswordForm() {
 
   function onSubmit(data) {
     startTransition(async () => {
-      const res = await forgotPasswordAction(data);
+      const res = await forgotPasswordAction({ ...data, captchaToken });
       if (res?.error) {
         toast.error(res.error);
+        setCaptchaKey((k) => k + 1);
+        setCaptchaToken(null);
         return;
       }
       setSent(true);
@@ -64,8 +71,17 @@ export function ForgotPasswordForm() {
         )}
       </div>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Sending…" : "Send reset link"}
+      <Captcha key={captchaKey} onVerify={setCaptchaToken} />
+
+      <Button type="submit" className="w-full" disabled={isPending || !captchaToken}>
+        {isPending ? (
+          <>
+            <Loader2 className="size-4 animate-spin" />
+            Sending&hellip;
+          </>
+        ) : (
+          "Send reset link"
+        )}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">

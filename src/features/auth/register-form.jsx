@@ -1,20 +1,28 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { registerSchema } from "@/lib/validations/auth";
 import { registerAction } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
+import { Captcha } from "@/components/common/captcha";
 
 export function RegisterForm() {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState(null);
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const [captchaKey, setCaptchaKey] = useState(0);
+
   const {
     register,
     handleSubmit,
@@ -24,11 +32,17 @@ export function RegisterForm() {
   function onSubmit(data) {
     setServerError(null);
     startTransition(async () => {
-      const res = await registerAction(data);
+      const res = await registerAction({ ...data, captchaToken });
       if (res?.error) {
         setServerError(res.error);
         toast.error(res.error);
+        setCaptchaKey((k) => k + 1);
+        setCaptchaToken(null);
+        return;
       }
+      toast.success("Account created! Welcome.");
+      router.push("/");
+      router.refresh();
     });
   }
 
@@ -57,9 +71,8 @@ export function RegisterForm() {
 
       <div className="space-y-1.5">
         <Label htmlFor="password">Password</Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="new-password"
           {...register("password")}
         />
@@ -68,12 +81,33 @@ export function RegisterForm() {
         )}
       </div>
 
+      <div className="space-y-1.5">
+        <Label htmlFor="confirm">Confirm password</Label>
+        <PasswordInput
+          id="confirm"
+          autoComplete="new-password"
+          {...register("confirm")}
+        />
+        {errors.confirm && (
+          <p className="text-xs text-destructive">{errors.confirm.message}</p>
+        )}
+      </div>
+
+      <Captcha key={captchaKey} onVerify={setCaptchaToken} />
+
       {serverError && (
         <p className="text-sm text-destructive">{serverError}</p>
       )}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Creating account…" : "Create admin account"}
+      <Button type="submit" className="w-full" disabled={isPending || !captchaToken}>
+        {isPending ? (
+          <>
+            <Loader2 className="size-4 animate-spin" />
+            Creating account&hellip;
+          </>
+        ) : (
+          "Create admin account"
+        )}
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">

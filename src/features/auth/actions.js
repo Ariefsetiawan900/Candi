@@ -23,11 +23,14 @@ export async function loginAction(formData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { error } = await supabase.auth.signInWithPassword({
+    ...parsed.data,
+    options: { captchaToken: formData.captchaToken },
+  });
   if (error) return { error: error.message };
 
   revalidatePath("/", "layout");
-  redirect("/");
+  return { ok: true };
 }
 
 export async function registerAction(formData) {
@@ -43,12 +46,13 @@ export async function registerAction(formData) {
     options: {
       data: { name: parsed.data.name, role: "admin" },
       emailRedirectTo: `${appUrl()}/auth/callback`,
+      captchaToken: formData.captchaToken,
     },
   });
   if (error) return { error: error.message };
 
   revalidatePath("/", "layout");
-  redirect("/");
+  return { ok: true };
 }
 
 export async function logoutAction() {
@@ -65,10 +69,10 @@ export async function forgotPasswordAction(formData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(
-    parsed.data.email,
-    { redirectTo: `${appUrl()}/auth/reset-password` }
-  );
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${appUrl()}/auth/reset-password`,
+    captchaToken: formData.captchaToken,
+  });
   if (error) return { error: error.message };
 
   return { ok: true };

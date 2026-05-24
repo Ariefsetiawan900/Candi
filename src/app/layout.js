@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import NextTopLoader from "nextjs-toploader";
 
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -34,6 +35,7 @@ export default function RootLayout({ children }) {
           enableSystem
           disableTransitionOnChange
         >
+          <NextTopLoader color="hsl(var(--primary))" showSpinner={false} />
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>

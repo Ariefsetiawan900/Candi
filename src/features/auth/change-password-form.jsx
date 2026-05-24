@@ -3,12 +3,13 @@
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { changePasswordSchema } from "@/lib/validations/auth";
 import { changePasswordAction } from "@/features/auth/actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 
 export function ChangePasswordForm() {
@@ -36,9 +37,8 @@ export function ChangePasswordForm() {
     <form className="space-y-4 max-w-sm" onSubmit={handleSubmit(onSubmit)} noValidate>
       <div className="space-y-1.5">
         <Label htmlFor="password">New password</Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           autoComplete="new-password"
           {...register("password")}
         />
@@ -48,9 +48,8 @@ export function ChangePasswordForm() {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="confirm">Confirm new password</Label>
-        <Input
+        <PasswordInput
           id="confirm"
-          type="password"
           autoComplete="new-password"
           {...register("confirm")}
         />
@@ -59,7 +58,14 @@ export function ChangePasswordForm() {
         )}
       </div>
       <Button type="submit" disabled={isPending}>
-        {isPending ? "Updating…" : "Update password"}
+        {isPending ? (
+          <>
+            <Loader2 className="size-4 animate-spin" />
+            Updating&hellip;
+          </>
+        ) : (
+          "Update password"
+        )}
       </Button>
     </form>
   );
