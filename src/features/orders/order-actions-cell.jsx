@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ModalConfirm } from "@/components/common/modal-confirm";
-import { OrderFormDialog } from "@/features/orders/order-form-dialog";
+import { OrderFormModal } from "@/features/orders/order-form-modal";
 import { updateOrderStatusAction, deleteOrderAction } from "@/features/orders/actions";
 
 export function OrderActionsCell({ order }) {
@@ -76,7 +76,7 @@ export function OrderActionsCell({ order }) {
       >
         <Pencil className="size-4" />
       </Button>
-      <OrderFormDialog order={order} open={editOpen} onOpenChange={setEditOpen} />
+      <OrderFormModal order={order} open={editOpen} onOpenChange={setEditOpen} />
 
       <Button
         variant="ghost"

@@ -4,9 +4,12 @@ import { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrdersTable } from "@/features/orders/orders-table";
-import { OrderFormDialog } from "@/features/orders/order-form-dialog";
+import { OrderFormModal } from "@/features/orders/order-form-modal";
 import { useUser } from "@/components/providers/user-provider";
-import { ACTIVE_STATUSES, HISTORY_STATUSES } from "@/lib/constants/order-status";
+import {
+  ACTIVE_STATUSES,
+  HISTORY_STATUSES,
+} from "@/lib/constants/order-status";
 
 function useTabFilters(prefix) {
   const searchParams = useSearchParams();
@@ -67,7 +70,7 @@ export function OrdersPage({ activeOrders, historyOrders }) {
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
-        {isAdmin && <OrderFormDialog />}
+        {isAdmin && <OrderFormModal />}
       </div>
 
       <TabsContent value="active">
@@ -79,12 +82,18 @@ export function OrdersPage({ activeOrders, historyOrders }) {
           search={activeFilters.search}
           onSearchChange={(v) => activeFilters.setFilter({ q: v, page: 1 })}
           statusFilter={activeFilters.statusFilter}
-          onStatusFilterChange={(v) => activeFilters.setFilter({ status: v === "all" ? "" : v, page: 1 })}
+          onStatusFilterChange={(v) =>
+            activeFilters.setFilter({ status: v === "all" ? "" : v, page: 1 })
+          }
           page={activeFilters.page}
           onPageChange={(v) => activeFilters.setFilter({ page: v })}
           pageSize={activeFilters.pageSize}
-          onPageSizeChange={(v) => activeFilters.setFilter({ limit: v, page: 1 })}
-          onResetFilters={() => activeFilters.setFilter({ q: "", status: "", page: 1, limit: 10 })}
+          onPageSizeChange={(v) =>
+            activeFilters.setFilter({ limit: v, page: 1 })
+          }
+          onResetFilters={() =>
+            activeFilters.setFilter({ q: "", status: "", page: 1, limit: 10 })
+          }
         />
       </TabsContent>
 
@@ -97,16 +106,31 @@ export function OrdersPage({ activeOrders, historyOrders }) {
           search={historyFilters.search}
           onSearchChange={(v) => historyFilters.setFilter({ q: v, page: 1 })}
           statusFilter={historyFilters.statusFilter}
-          onStatusFilterChange={(v) => historyFilters.setFilter({ status: v === "all" ? "" : v, page: 1 })}
+          onStatusFilterChange={(v) =>
+            historyFilters.setFilter({ status: v === "all" ? "" : v, page: 1 })
+          }
           page={historyFilters.page}
           onPageChange={(v) => historyFilters.setFilter({ page: v })}
           pageSize={historyFilters.pageSize}
-          onPageSizeChange={(v) => historyFilters.setFilter({ limit: v, page: 1 })}
+          onPageSizeChange={(v) =>
+            historyFilters.setFilter({ limit: v, page: 1 })
+          }
           dateFrom={historyFilters.dateFrom}
-          onDateFromChange={(v) => historyFilters.setFilter({ from: v, page: 1 })}
+          onDateFromChange={(v) =>
+            historyFilters.setFilter({ from: v, page: 1 })
+          }
           dateTo={historyFilters.dateTo}
           onDateToChange={(v) => historyFilters.setFilter({ to: v, page: 1 })}
-          onResetFilters={() => historyFilters.setFilter({ q: "", status: "", page: 1, limit: 10, from: "", to: "" })}
+          onResetFilters={() =>
+            historyFilters.setFilter({
+              q: "",
+              status: "",
+              page: 1,
+              limit: 10,
+              from: "",
+              to: "",
+            })
+          }
         />
       </TabsContent>
     </Tabs>
