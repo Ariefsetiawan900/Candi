@@ -1,13 +1,14 @@
 "use client";
 
-import { createContext, useContext } from "react";
-
-const UserContext = createContext({ user: null, profile: null });
+import { useEffect } from "react";
+import { useUserStore } from "@/store/user-store";
 
 export function UserProvider({ value, children }) {
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+  useEffect(() => {
+    useUserStore.setState(value);
+  }, [value]);
+
+  return children;
 }
 
-export function useUser() {
-  return useContext(UserContext);
-}
+export { useUser } from "@/store/user-store";

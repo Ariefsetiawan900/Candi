@@ -53,7 +53,7 @@ export function ForgotPasswordForm() {
           If an account exists for that email, a reset link has been sent.
         </p>
         <Link
-          href="/login"
+          href="/auth/login"
           className="inline-block font-medium text-foreground hover:underline"
         >
           Back to sign in
@@ -95,7 +95,7 @@ export function ForgotPasswordForm() {
       </Button>
 
       <p className="text-center text-sm text-muted-foreground">
-        <Link href="/login" className="hover:underline">
+        <Link href="/auth/login" className="hover:underline">
           Back to sign in
         </Link>
       </p>

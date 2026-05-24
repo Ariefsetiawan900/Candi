@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-const PUBLIC_ROUTES = ["/login", "/register", "/forgot-password"];
+const PUBLIC_ROUTES = ["/auth/login", "/auth/register", "/auth/forgot-password"];
 const AUTH_FLOW_ROUTES = ["/auth/reset-password", "/auth/callback"];
 
 export async function updateSession(request) {
@@ -41,7 +41,7 @@ export async function updateSession(request) {
   // Unauthenticated user trying to hit a protected page → /login
   if (!session && !isPublic && !isAuthFlow) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = "/auth/login";
     url.search = "";
     url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);

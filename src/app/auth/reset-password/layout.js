@@ -1,15 +1,8 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 
-export default async function AuthLayout({ children }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) redirect("/");
-
+// Reset password does not redirect logged-in users — the email link
+// creates a temporary session that must be used here.
+export default function ResetPasswordLayout({ children }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-muted/30">
       <Link

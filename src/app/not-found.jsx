@@ -8,7 +8,7 @@ export default async function NotFound() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const homeHref = user ? "/" : "/login";
+  const homeHref = user ? "/" : "/auth/login";
   const homeLabel = user ? "Back to Dashboard" : "Back to Login";
 
   return (

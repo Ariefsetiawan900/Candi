@@ -33,7 +33,7 @@ export function ResetPasswordForm() {
         return;
       }
       toast.success("Password updated. Please sign in.");
-      router.push("/login");
+      router.push("/auth/login");
     });
   }
 
