@@ -44,3 +44,35 @@ export async function updateOrderStatusAction({ id, status }) {
   revalidatePath("/");
   return { ok: true };
 }
+
+export async function updateOrderAction({ id, ...formData }) {
+  await requireRole("admin");
+
+  const parsed = orderSchema.safeParse(formData);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("orders")
+    .update(parsed.data)
+    .eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function deleteOrderAction({ id }) {
+  await requireRole("admin");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("orders").delete().eq("id", id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/");
+  return { ok: true };
+}

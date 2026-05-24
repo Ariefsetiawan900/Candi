@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -32,12 +32,34 @@ import {
   ORDER_STATUS_LABEL,
 } from "@/lib/constants/order-status";
 import { todayISO } from "@/lib/utils/format-date";
-import { createOrderAction } from "@/features/orders/actions";
+import { createOrderAction, updateOrderAction } from "@/features/orders/actions";
 
-export function OrderFormDialog() {
+const CREATE_DEFAULTS = {
+  customer_name: "",
+  menu: "",
+  package: "",
+  order_date: todayISO(),
+  pickup_date: todayISO(),
+  quantity: 1,
+  status: "pending",
+};
+
+// Props:
+//   order      — if provided, opens in edit mode (no internal trigger button)
+//   open       — controlled open state (edit mode)
+//   onOpenChange — controlled handler (edit mode)
+export function OrderFormDialog({ order, open: controlledOpen, onOpenChange }) {
+  const isEditMode = !!order;
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  const open = isEditMode ? controlledOpen : internalOpen;
+
+  function setOpen(val) {
+    if (isEditMode) onOpenChange(val);
+    else setInternalOpen(val);
+  }
 
   const {
     register,
@@ -47,50 +69,75 @@ export function OrderFormDialog() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(orderSchema),
-    defaultValues: {
-      customer_name: "",
-      menu: "",
-      package: "",
-      order_date: todayISO(),
-      pickup_date: todayISO(),
-      quantity: 1,
-      status: "pending",
-    },
+    defaultValues: isEditMode
+      ? {
+          customer_name: order.customer_name,
+          menu: order.menu,
+          package: order.package,
+          order_date: order.order_date,
+          pickup_date: order.pickup_date,
+          quantity: order.quantity,
+          status: order.status,
+        }
+      : CREATE_DEFAULTS,
   });
+
+  // Re-populate form when order changes (e.g. different row opened)
+  useEffect(() => {
+    if (isEditMode && open) {
+      reset({
+        customer_name: order.customer_name,
+        menu: order.menu,
+        package: order.package,
+        order_date: order.order_date,
+        pickup_date: order.pickup_date,
+        quantity: order.quantity,
+        status: order.status,
+      });
+    }
+  }, [open, isEditMode, order, reset]);
 
   function onSubmit(data) {
     startTransition(async () => {
-      const res = await createOrderAction(data);
+      const res = isEditMode
+        ? await updateOrderAction({ id: order.id, ...data })
+        : await createOrderAction(data);
+
       if (res?.error) {
         toast.error(res.error);
         return;
       }
-      toast.success("Order created");
-      reset();
+
+      toast.success(isEditMode ? "Order updated" : "Order created");
+      if (!isEditMode) reset();
       setOpen(false);
       router.refresh();
     });
   }
 
-  return (
+  const dialog = (
     <Dialog
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (!o) reset();
+        if (!o && !isEditMode) reset();
       }}
     >
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="size-4" />
-          Create order
-        </Button>
-      </DialogTrigger>
+      {!isEditMode && (
+        <DialogTrigger asChild>
+          <Button>
+            <Plus className="size-4" />
+            Create order
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New order</DialogTitle>
+          <DialogTitle>{isEditMode ? "Edit order" : "New order"}</DialogTitle>
           <DialogDescription>
-            Fill in the customer&apos;s order details.
+            {isEditMode
+              ? "Update the order details below."
+              : "Fill in the customer's order details."}
           </DialogDescription>
         </DialogHeader>
 
@@ -193,11 +240,22 @@ export function OrderFormDialog() {
               Cancel
             </Button>
             <Button type="submit" disabled={isPending}>
-              {isPending ? "Creating…" : "Create order"}
+              {isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  {isEditMode ? "Saving…" : "Creating…"}
+                </>
+              ) : isEditMode ? (
+                "Save changes"
+              ) : (
+                "Create order"
+              )}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
+
+  return dialog;
 }

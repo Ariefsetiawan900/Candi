@@ -22,20 +22,19 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatusBadge } from "@/components/common/status-badge";
-import { OrderStatusSelect } from "@/features/orders/order-status-select";
+import { OrderActionsCell } from "@/features/orders/order-actions-cell";
 import { ExportCsvButton } from "@/features/orders/export-csv-button";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useUser } from "@/components/providers/user-provider";
 import { formatDate } from "@/lib/utils/format-date";
-import {
-  ORDER_STATUS_LABEL,
-} from "@/lib/constants/order-status";
+import { ORDER_STATUS_LABEL } from "@/lib/constants/order-status";
 
 const PAGE_SIZE = 10;
 
 export function OrdersTable({ orders, availableStatuses }) {
   const { profile } = useUser();
   const isAdmin = profile?.role === "admin";
+  console.log("profile?.role ", profile?.role);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -52,8 +51,7 @@ export function OrdersTable({ orders, availableStatuses }) {
         o.menu.toLowerCase().includes(q) ||
         o.package.toLowerCase().includes(q) ||
         o.order_no.toLowerCase().includes(q);
-      const matchesStatus =
-        statusFilter === "all" || o.status === statusFilter;
+      const matchesStatus = statusFilter === "all" || o.status === statusFilter;
       return matchesQuery && matchesStatus;
     });
   }, [orders, debouncedSearch, statusFilter]);
@@ -88,7 +86,7 @@ export function OrdersTable({ orders, availableStatuses }) {
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full sm:w-45">
               <SelectValue placeholder="All statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -116,12 +114,13 @@ export function OrdersTable({ orders, availableStatuses }) {
               <TableHead>Pickup Date</TableHead>
               <TableHead className="text-right">Qty</TableHead>
               <TableHead>Status</TableHead>
+              {isAdmin && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {pageItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="p-0">
+                <TableCell colSpan={isAdmin ? 9 : 8} className="p-0">
                   <EmptyState
                     title="No orders"
                     description={
@@ -154,12 +153,13 @@ export function OrdersTable({ orders, availableStatuses }) {
                     {o.quantity}
                   </TableCell>
                   <TableCell>
-                    {isAdmin ? (
-                      <OrderStatusSelect id={o.id} status={o.status} />
-                    ) : (
-                      <StatusBadge status={o.status} />
-                    )}
+                    <StatusBadge status={o.status} />
                   </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <OrderActionsCell order={o} />
+                    </TableCell>
+                  )}
                 </TableRow>
               ))
             )}
@@ -171,7 +171,8 @@ export function OrdersTable({ orders, availableStatuses }) {
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
             Showing {(safePage - 1) * PAGE_SIZE + 1}–
-            {Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+            {Math.min(safePage * PAGE_SIZE, filtered.length)} of{" "}
+            {filtered.length}
           </p>
           <div className="flex items-center gap-2">
             <Button
