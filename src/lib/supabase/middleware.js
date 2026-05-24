@@ -28,25 +28,27 @@ export async function updateSession(request) {
     }
   );
 
-  // Refresh the session if expired
+  // Use getSession for routing decisions in middleware (fast, cookie-based).
+  // Server Components use getUser() for full server-side validation.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
   const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC_ROUTES.some((p) => pathname.startsWith(p));
-  const isAuthFlow = AUTH_FLOW_ROUTES.some((p) => pathname.startsWith(p));
+  const isPublic = PUBLIC_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  const isAuthFlow = AUTH_FLOW_ROUTES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   // Unauthenticated user trying to hit a protected page → /login
-  if (!user && !isPublic && !isAuthFlow) {
+  if (!session && !isPublic && !isAuthFlow) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    url.search = "";
     url.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(url);
   }
 
-  // Authenticated user hitting an auth page → /
-  if (user && isPublic) {
+  // Authenticated user hitting a public auth page → /
+  if (session && isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     url.search = "";
