@@ -12,8 +12,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/common/empty-state";
 import { ResetPasswordButton } from "@/features/members/reset-password-button";
+import { ToggleStatusButton } from "@/features/members/toggle-status-button";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatDate } from "@/lib/utils/format-date";
 
@@ -26,7 +28,8 @@ export function MembersTable({ members }) {
     if (!q) return members;
     return members.filter(
       (m) =>
-        m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q)
+        m.name.toLowerCase().includes(q) ||
+        (m.email && m.email.toLowerCase().includes(q))
     );
   }, [members, debounced]);
 
@@ -48,14 +51,16 @@ export function MembersTable({ members }) {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Created At</TableHead>
+              <TableHead>Updated At</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="p-0">
+                <TableCell colSpan={6} className="p-0">
                   <EmptyState
                     title="No members"
                     description="Click 'Add member' to create one."
@@ -66,15 +71,36 @@ export function MembersTable({ members }) {
               filtered.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell className="font-medium">{m.name}</TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-muted-foreground text-sm">
                     {m.email}
                   </TableCell>
+                  <TableCell>
+                    {m.is_active ? (
+                      <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400">
+                        Aktif
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">
+                        Nonaktif
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell>{formatDate(m.created_at)}</TableCell>
+                  <TableCell>
+                    {m.updated_at ? formatDate(m.updated_at) : "—"}
+                  </TableCell>
                   <TableCell className="text-right">
-                    <ResetPasswordButton
-                      memberId={m.id}
-                      memberEmail={m.email}
-                    />
+                    <div className="flex items-center justify-end gap-2">
+                      <ToggleStatusButton
+                        memberId={m.id}
+                        memberName={m.name}
+                        isActive={m.is_active}
+                      />
+                      <ResetPasswordButton
+                        memberId={m.id}
+                        memberEmail={m.email}
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

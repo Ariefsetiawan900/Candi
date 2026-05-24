@@ -60,6 +60,7 @@ export function AddMemberDialog() {
     }
   }
 
+
   return (
     <>
       <Dialog
@@ -79,8 +80,8 @@ export function AddMemberDialog() {
           <DialogHeader>
             <DialogTitle>Add a new member</DialogTitle>
             <DialogDescription>
-              We&apos;ll create the account and generate a one-time password for
-              them.
+              Enter the member&apos;s name. Email and password will be generated
+              automatically.
             </DialogDescription>
           </DialogHeader>
 
@@ -90,13 +91,6 @@ export function AddMemberDialog() {
               <Input id="name" {...register("name")} />
               {errors.name && (
                 <p className="text-xs text-destructive">{errors.name.message}</p>
-              )}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register("email")} />
-              {errors.email && (
-                <p className="text-xs text-destructive">{errors.email.message}</p>
               )}
             </div>
 

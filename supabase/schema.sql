@@ -8,7 +8,9 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
   role text not null check (role in ('admin','member')) default 'member',
-  created_at timestamptz default now()
+  is_active boolean not null default true,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
 -- ============================================================================
@@ -62,11 +64,13 @@ create trigger orders_set_order_no
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, name, role)
+  insert into public.profiles (id, name, role, is_active, updated_at)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'name', split_part(new.email, '@', 1)),
-    coalesce(new.raw_user_meta_data->>'role', 'admin')
+    coalesce(new.raw_user_meta_data->>'role', 'admin'),
+    true,
+    now()
   );
   return new;
 end $$;
@@ -99,6 +103,14 @@ create policy profiles_admin_read on public.profiles
 drop policy if exists profiles_self_update on public.profiles;
 create policy profiles_self_update on public.profiles
   for update using (auth.uid() = id);
+
+-- profiles: admins can update any profile (e.g. toggle is_active)
+drop policy if exists profiles_admin_update on public.profiles;
+create policy profiles_admin_update on public.profiles
+  for update using (exists (
+    select 1 from public.profiles p
+    where p.id = auth.uid() and p.role = 'admin'
+  ));
 
 -- orders: any authenticated user can read
 drop policy if exists orders_authed_read on public.orders;

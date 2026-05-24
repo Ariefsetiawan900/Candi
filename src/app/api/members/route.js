@@ -5,6 +5,41 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { generatePassword } from "@/lib/utils/generate-password";
 import { createMemberSchema } from "@/lib/validations/member";
 
+// Convert full name to email-safe slug: "John Doe" → "john.doe"
+function nameToSlug(name) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s]/g, "")
+    .replace(/\s+/g, ".");
+}
+
+// Build a unique email by checking existing auth users for conflicts.
+// Tries "john.doe@member.candi.local", then "john.doe2", "john.doe3", …
+async function buildUniqueEmail(name, adminClient) {
+  const base = nameToSlug(name);
+  const domain = "member.candi.local";
+
+  const candidate = `${base}@${domain}`;
+
+  // List all auth users and collect used emails with this base.
+  const { data } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+  const used = new Set(
+    (data?.users ?? []).map((u) => u.email?.toLowerCase())
+  );
+
+  if (!used.has(candidate)) return candidate;
+
+  // Append incrementing number until unique
+  for (let i = 2; i <= 999; i++) {
+    const next = `${base}${i}@${domain}`;
+    if (!used.has(next)) return next;
+  }
+
+  // Fallback: append timestamp millis (virtually never needed)
+  return `${base}_${Date.now()}@${domain}`;
+}
+
 export async function POST(request) {
   try {
     await requireRole("admin");
@@ -27,11 +62,12 @@ export async function POST(request) {
     );
   }
 
-  const password = generatePassword(16);
   const admin = createAdminClient();
+  const email = await buildUniqueEmail(parsed.data.name, admin);
+  const password = generatePassword(16);
 
   const { data, error } = await admin.auth.admin.createUser({
-    email: parsed.data.email,
+    email,
     password,
     email_confirm: true,
     user_metadata: { name: parsed.data.name, role: "member" },
@@ -43,7 +79,7 @@ export async function POST(request) {
 
   return NextResponse.json({
     id: data.user.id,
-    email: parsed.data.email,
+    email,
     password,
   });
 }

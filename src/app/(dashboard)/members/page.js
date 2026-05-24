@@ -12,7 +12,7 @@ export default async function MembersPage() {
 
   const { data: profiles = [] } = await admin
     .from("profiles")
-    .select("id, name, role, created_at")
+    .select("id, name, role, is_active, created_at, updated_at")
     .eq("role", "member")
     .order("created_at", { ascending: false });
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,8 +25,14 @@ export function ModalConfirm({
   isPending,
 }) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+    <AlertDialog
+      open={open}
+      onOpenChange={(o) => { if (isPending) return; onOpenChange(o); }}
+    >
+      <AlertDialogContent
+        onInteractOutside={(e) => { if (isPending) e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (isPending) e.preventDefault(); }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           {description && (
@@ -38,7 +46,12 @@ export function ModalConfirm({
             disabled={isPending}
             className={cn(confirmClassName)}
           >
-            {isPending ? "Memproses…" : confirmLabel}
+            {isPending ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Memproses…
+              </>
+            ) : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
