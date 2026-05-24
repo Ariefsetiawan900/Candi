@@ -22,14 +22,14 @@ export function LoginForm() {
   const [serverError, setServerError] = useState(null);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [captchaKey, setCaptchaKey] = useState(0);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm({ resolver: zodResolver(loginSchema) });
+  const [captchaError, setCaptchaError] = useState(false);
 
   function onSubmit(data) {
+    if (!captchaToken) {
+      setCaptchaError(true);
+      return;
+    }
+    setCaptchaError(false);
     setServerError(null);
     startTransition(async () => {
       const res = await loginAction({ ...data, captchaToken });
@@ -45,6 +45,12 @@ export function LoginForm() {
       router.refresh();
     });
   }
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(loginSchema) });
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -82,17 +88,17 @@ export function LoginForm() {
         )}
       </div>
 
-      <Captcha key={captchaKey} onVerify={setCaptchaToken} />
+      <Captcha
+        key={captchaKey}
+        onVerify={(token) => { setCaptchaToken(token); setCaptchaError(false); }}
+        showError={captchaError}
+      />
 
       {serverError && (
         <p className="text-sm text-destructive">{serverError}</p>
       )}
 
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={isPending || !captchaToken}
-      >
+      <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? (
           <>
             <Loader2 className="size-4 animate-spin" />

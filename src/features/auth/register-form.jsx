@@ -22,6 +22,7 @@ export function RegisterForm() {
   const [serverError, setServerError] = useState(null);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState(false);
 
   const {
     register,
@@ -30,6 +31,11 @@ export function RegisterForm() {
   } = useForm({ resolver: zodResolver(registerSchema) });
 
   function onSubmit(data) {
+    if (!captchaToken) {
+      setCaptchaError(true);
+      return;
+    }
+    setCaptchaError(false);
     setServerError(null);
     startTransition(async () => {
       const res = await registerAction({ ...data, captchaToken });
@@ -93,13 +99,17 @@ export function RegisterForm() {
         )}
       </div>
 
-      <Captcha key={captchaKey} onVerify={setCaptchaToken} />
+      <Captcha
+        key={captchaKey}
+        onVerify={(token) => { setCaptchaToken(token); setCaptchaError(false); }}
+        showError={captchaError}
+      />
 
       {serverError && (
         <p className="text-sm text-destructive">{serverError}</p>
       )}
 
-      <Button type="submit" className="w-full" disabled={isPending || !captchaToken}>
+      <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? (
           <>
             <Loader2 className="size-4 animate-spin" />

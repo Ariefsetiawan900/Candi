@@ -19,6 +19,7 @@ export function ForgotPasswordForm() {
   const [sent, setSent] = useState(false);
   const [captchaToken, setCaptchaToken] = useState(null);
   const [captchaKey, setCaptchaKey] = useState(0);
+  const [captchaError, setCaptchaError] = useState(false);
 
   const {
     register,
@@ -27,6 +28,11 @@ export function ForgotPasswordForm() {
   } = useForm({ resolver: zodResolver(forgotPasswordSchema) });
 
   function onSubmit(data) {
+    if (!captchaToken) {
+      setCaptchaError(true);
+      return;
+    }
+    setCaptchaError(false);
     startTransition(async () => {
       const res = await forgotPasswordAction({ ...data, captchaToken });
       if (res?.error) {
@@ -71,9 +77,13 @@ export function ForgotPasswordForm() {
         )}
       </div>
 
-      <Captcha key={captchaKey} onVerify={setCaptchaToken} />
+      <Captcha
+        key={captchaKey}
+        onVerify={(token) => { setCaptchaToken(token); setCaptchaError(false); }}
+        showError={captchaError}
+      />
 
-      <Button type="submit" className="w-full" disabled={isPending || !captchaToken}>
+      <Button type="submit" className="w-full" disabled={isPending}>
         {isPending ? (
           <>
             <Loader2 className="size-4 animate-spin" />
