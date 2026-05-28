@@ -40,10 +40,7 @@ export function PaginationControls({
         {/* Page size selector */}
         <Select
           value={String(pageSize)}
-          onValueChange={(v) => {
-            onPageSizeChange(Number(v));
-            onPageChange(1);
-          }}
+          onValueChange={(v) => onPageSizeChange(Number(v))}
         >
           <SelectTrigger className="h-8 w-[75px] text-xs">
             <SelectValue />
