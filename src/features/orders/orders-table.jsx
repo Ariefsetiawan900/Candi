@@ -36,24 +36,34 @@ export function OrdersTable({
   availableStatuses,
   tab,
   filenamePrefix,
+  // Committed filter values (from URL)
   search,
   onSearchChange,
   statusFilter,
-  onStatusFilterChange,
+  orderDateFrom,
+  orderDateTo,
+  pickupDateFrom,
+  pickupDateTo,
   page,
   onPageChange,
   pageSize,
   onPageSizeChange,
-  dateFrom,
-  onDateFromChange,
-  dateTo,
-  onDateToChange,
+  // Called with draft object { status, orderDateFrom, orderDateTo, pickupDateFrom, pickupDateTo }
+  onApplyFilters,
   onResetFilters,
 }) {
   const { profile } = useUser();
   const isAdmin = profile?.role === "admin";
 
   const debouncedSearch = useDebounce(search, 250);
+
+  const committed = {
+    status: statusFilter ?? "all",
+    orderDateFrom: orderDateFrom ?? "",
+    orderDateTo: orderDateTo ?? "",
+    pickupDateFrom: pickupDateFrom ?? "",
+    pickupDateTo: pickupDateTo ?? "",
+  };
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
@@ -66,18 +76,31 @@ export function OrdersTable({
         o.order_no.toLowerCase().includes(q);
       const matchesStatus =
         !statusFilter || statusFilter === "all" || o.status === statusFilter;
-      const matchesFrom = !dateFrom || o.order_date >= dateFrom;
-      const matchesTo = !dateTo || o.order_date <= dateTo;
-      return matchesQuery && matchesStatus && matchesFrom && matchesTo;
+      const matchesOrderFrom = !orderDateFrom || o.order_date >= orderDateFrom;
+      const matchesOrderTo = !orderDateTo || o.order_date <= orderDateTo;
+      const matchesPickupFrom = !pickupDateFrom || o.pickup_date >= pickupDateFrom;
+      const matchesPickupTo = !pickupDateTo || o.pickup_date <= pickupDateTo;
+      return (
+        matchesQuery &&
+        matchesStatus &&
+        matchesOrderFrom &&
+        matchesOrderTo &&
+        matchesPickupFrom &&
+        matchesPickupTo
+      );
     });
-  }, [orders, debouncedSearch, statusFilter, dateFrom, dateTo]);
+  }, [orders, debouncedSearch, statusFilter, orderDateFrom, orderDateTo, pickupDateFrom, pickupDateTo]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const pageItems = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const hasActiveFilters =
-    (statusFilter && statusFilter !== "all") || !!dateFrom || !!dateTo;
+    (statusFilter && statusFilter !== "all") ||
+    !!orderDateFrom ||
+    !!orderDateTo ||
+    !!pickupDateFrom ||
+    !!pickupDateTo;
 
   return (
     <div className="space-y-3">
@@ -96,49 +119,79 @@ export function OrdersTable({
         <div className="flex items-center gap-2">
           <ExportCsvButton orders={filtered} filenamePrefix={filenamePrefix} />
           <FilterDrawer
+            committed={committed}
             hasActiveFilters={hasActiveFilters}
+            onApply={onApplyFilters}
             onReset={onResetFilters}
           >
-            {/* Status filter — both tabs */}
-            <div className="space-y-1.5">
-              <Label className="text-sm font-medium">Status</Label>
-              <Select
-                value={statusFilter || "all"}
-                onValueChange={onStatusFilterChange}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  {availableStatuses.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {ORDER_STATUS_LABEL[s] ?? s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Date range — history tab only */}
-            {tab === "history" && (
+            {(draft, setDraft) => (
               <>
+                {/* Status */}
                 <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Order date from</Label>
-                  <Input
-                    type="date"
-                    value={dateFrom ?? ""}
-                    onChange={(e) => onDateFromChange(e.target.value)}
-                  />
+                  <Label className="text-sm font-medium">Status</Label>
+                  <Select
+                    value={draft.status}
+                    onValueChange={(v) => setDraft((d) => ({ ...d, status: v }))}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      {availableStatuses.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {ORDER_STATUS_LABEL[s] ?? s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">Order date to</Label>
-                  <Input
-                    type="date"
-                    value={dateTo ?? ""}
-                    onChange={(e) => onDateToChange(e.target.value)}
-                  />
-                </div>
+
+                {/* Date filters — history tab only */}
+                {tab === "history" && (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Order date — start</Label>
+                      <Input
+                        type="date"
+                        value={draft.orderDateFrom}
+                        onChange={(e) =>
+                          setDraft((d) => ({ ...d, orderDateFrom: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Order date — end</Label>
+                      <Input
+                        type="date"
+                        value={draft.orderDateTo}
+                        onChange={(e) =>
+                          setDraft((d) => ({ ...d, orderDateTo: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Pickup date — start</Label>
+                      <Input
+                        type="date"
+                        value={draft.pickupDateFrom}
+                        onChange={(e) =>
+                          setDraft((d) => ({ ...d, pickupDateFrom: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Pickup date — end</Label>
+                      <Input
+                        type="date"
+                        value={draft.pickupDateTo}
+                        onChange={(e) =>
+                          setDraft((d) => ({ ...d, pickupDateTo: e.target.value }))
+                        }
+                      />
+                    </div>
+                  </>
+                )}
               </>
             )}
           </FilterDrawer>
@@ -168,7 +221,7 @@ export function OrdersTable({
                   <EmptyState
                     title="No orders"
                     description={
-                      search || (statusFilter && statusFilter !== "all") || dateFrom || dateTo
+                      search || hasActiveFilters
                         ? "Try adjusting your filters."
                         : "Orders will appear here once they're created."
                     }

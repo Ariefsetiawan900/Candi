@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { MembersTable } from "@/features/members/members-table";
 import { AddMemberDialog } from "@/features/members/add-member-dialog";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Members — CANDI" };
 
 export default async function MembersPage() {

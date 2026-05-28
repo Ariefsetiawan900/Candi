@@ -14,13 +14,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/common/empty-state";
+import { PaginationControls } from "@/components/common/pagination-controls";
 import { ResetPasswordButton } from "@/features/members/reset-password-button";
 import { ToggleStatusButton } from "@/features/members/toggle-status-button";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatDate } from "@/lib/utils/format-date";
 
+const DEFAULT_PAGE_SIZE = 50;
+
 export function MembersTable({ members }) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const debounced = useDebounce(search, 250);
 
   const filtered = useMemo(() => {
@@ -33,6 +38,15 @@ export function MembersTable({ members }) {
     );
   }, [members, debounced]);
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  function handleSearchChange(v) {
+    setSearch(v);
+    setPage(1);
+  }
+
   return (
     <div className="space-y-3">
       <div className="relative max-w-xs">
@@ -40,7 +54,7 @@ export function MembersTable({ members }) {
         <Input
           placeholder="Search members…"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="pl-8"
         />
       </div>
@@ -58,17 +72,21 @@ export function MembersTable({ members }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
+            {pageItems.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="p-0">
                   <EmptyState
                     title="No members"
-                    description="Click 'Add member' to create one."
+                    description={
+                      search
+                        ? "No members match your search."
+                        : "Click 'Add member' to create one."
+                    }
                   />
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((m) => (
+              pageItems.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell className="font-medium">{m.name}</TableCell>
                   <TableCell className="text-muted-foreground text-sm">
@@ -108,6 +126,15 @@ export function MembersTable({ members }) {
           </TableBody>
         </Table>
       </div>
+
+      <PaginationControls
+        page={safePage}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        totalItems={filtered.length}
+        onPageChange={setPage}
+        onPageSizeChange={(v) => { setPageSize(v); setPage(1); }}
+      />
     </div>
   );
 }
