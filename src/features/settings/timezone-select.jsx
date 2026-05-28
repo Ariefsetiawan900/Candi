@@ -22,6 +22,7 @@ export function TimezoneSelect() {
     startTransition(async () => {
       try {
         await updateTimezone(value);
+        toast.success("Pengaturan timezone berhasil disimpan.");
       } catch {
         toast.error("Gagal menyimpan pengaturan timezone.");
       }

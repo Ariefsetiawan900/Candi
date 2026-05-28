@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { format, subDays } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActiveOrdersTable } from "@/features/active-orders/active-orders-table";
 import { HistoryOrdersTable } from "@/features/history-orders/history-orders-table";
@@ -12,7 +13,7 @@ import {
 
 const VALID_SIZES = [10, 25, 50, 100];
 
-function useTabFilters(prefix) {
+function useTabFilters(prefix, defaultOdf = "", defaultOdt = "") {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -24,8 +25,8 @@ function useTabFilters(prefix) {
   const page = Math.max(1, Number(get("page", "1")));
   const _limit = Number(get("limit", "50"));
   const pageSize = VALID_SIZES.includes(_limit) ? _limit : 50;
-  const orderDateFrom = get("odf");
-  const orderDateTo = get("odt");
+  const orderDateFrom = get("odf", defaultOdf);
+  const orderDateTo = get("odt", defaultOdt);
   const pickupDateFrom = get("pdf");
   const pickupDateTo = get("pdt");
 
@@ -70,8 +71,11 @@ export function OrdersPage({ activeOrders, historyOrders }) {
     router.replace(`?${params.toString()}`, { scroll: false });
   }
 
+  const today = format(new Date(), "yyyy-MM-dd");
+  const weekAgo = format(subDays(new Date(), 7), "yyyy-MM-dd");
+
   const activeFilters = useTabFilters("a");
-  const historyFilters = useTabFilters("h");
+  const historyFilters = useTabFilters("h", weekAgo, today);
 
   return (
     <Tabs value={tab} onValueChange={setTab} className="space-y-4">
@@ -143,8 +147,8 @@ export function OrdersPage({ activeOrders, historyOrders }) {
               status: "",
               page: 1,
               limit: 50,
-              odf: "",
-              odt: "",
+              odf: weekAgo,
+              odt: today,
               pdf: "",
               pdt: "",
             })
