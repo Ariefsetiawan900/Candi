@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,7 @@ export function OrdersTable({
 }) {
   const { profile } = useUser();
   const isAdmin = profile?.role === "admin";
+  const router = useRouter();
 
   const debouncedSearch = useDebounce(search, 250);
 
@@ -231,7 +233,11 @@ export function OrdersTable({
               </TableRow>
             ) : (
               pageItems.map((o, idx) => (
-                <TableRow key={o.id}>
+                <TableRow
+                  key={o.id}
+                  className={tab === "history" ? "cursor-pointer" : undefined}
+                  onClick={tab === "history" ? () => router.push(`/history/${o.id}`) : undefined}
+                >
                   <TableCell className="text-muted-foreground">
                     {(safePage - 1) * pageSize + idx + 1}
                   </TableCell>

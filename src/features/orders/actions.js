@@ -34,9 +34,13 @@ export async function updateOrderStatusAction({ id, status }) {
   }
 
   const supabase = await createClient();
+  const ts = new Date().toISOString();
+  const tsFields =
+    status === "completed" ? { completed_at: ts } :
+    status === "cancelled" ? { cancelled_at: ts } : {};
   const { error } = await supabase
     .from("orders")
-    .update({ status })
+    .update({ status, ...tsFields })
     .eq("id", id);
 
   if (error) return { error: error.message };
@@ -54,9 +58,13 @@ export async function updateOrderAction({ id, ...formData }) {
   }
 
   const supabase = await createClient();
+  const ts = new Date().toISOString();
+  const tsFields =
+    parsed.data.status === "completed" ? { completed_at: ts } :
+    parsed.data.status === "cancelled" ? { cancelled_at: ts } : {};
   const { error } = await supabase
     .from("orders")
-    .update(parsed.data)
+    .update({ ...parsed.data, ...tsFields })
     .eq("id", id);
 
   if (error) return { error: error.message };

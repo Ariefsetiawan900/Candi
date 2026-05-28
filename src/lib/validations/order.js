@@ -9,5 +9,5 @@ export const orderSchema = z.object({
   pickup_date: z.string().min(1, "Required"),
   quantity: z.coerce.number().int().positive("Must be > 0"),
   status: z.enum(ORDER_STATUSES).default("pending"),
-  note: z.string().max(500, "Max 500 characters").optional().or(z.literal("")),
+  note: z.string().max(100, "Max 100 characters").optional().or(z.literal("")),
 });
