@@ -3,9 +3,8 @@
 import { useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { OrdersTable } from "@/features/orders/orders-table";
-import { OrderFormModal } from "@/features/orders/order-form-modal";
-import { useUser } from "@/components/providers/user-provider";
+import { ActiveOrdersTable } from "@/features/active-orders/active-orders-table";
+import { HistoryOrdersTable } from "@/features/history-orders/history-orders-table";
 import {
   ACTIVE_STATUSES,
   HISTORY_STATUSES,
@@ -60,8 +59,6 @@ function useTabFilters(prefix) {
 }
 
 export function OrdersPage({ activeOrders, historyOrders }) {
-  const { profile } = useUser();
-  const isAdmin = profile?.role === "admin";
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -86,24 +83,13 @@ export function OrdersPage({ activeOrders, historyOrders }) {
       </div>
 
       <TabsContent value="active">
-        <div className="space-y-3">
-          {isAdmin && (
-            <div className="flex justify-end">
-              <OrderFormModal />
-            </div>
-          )}
-        <OrdersTable
+        <ActiveOrdersTable
           orders={activeOrders}
           availableStatuses={ACTIVE_STATUSES}
-          tab="active"
           filenamePrefix="orders(active)"
           search={activeFilters.search}
           onSearchChange={(v) => activeFilters.setFilter({ q: v, page: 1 })}
           statusFilter={activeFilters.statusFilter}
-          orderDateFrom={activeFilters.orderDateFrom}
-          orderDateTo={activeFilters.orderDateTo}
-          pickupDateFrom={activeFilters.pickupDateFrom}
-          pickupDateTo={activeFilters.pickupDateTo}
           page={activeFilters.page}
           onPageChange={(v) => activeFilters.setFilter({ page: v })}
           pageSize={activeFilters.pageSize}
@@ -111,10 +97,6 @@ export function OrdersPage({ activeOrders, historyOrders }) {
           onApplyFilters={(draft) =>
             activeFilters.setFilter({
               status: draft.status === "all" ? "" : draft.status,
-              odf: draft.orderDateFrom,
-              odt: draft.orderDateTo,
-              pdf: draft.pickupDateFrom,
-              pdt: draft.pickupDateTo,
               page: 1,
             })
           }
@@ -124,21 +106,15 @@ export function OrdersPage({ activeOrders, historyOrders }) {
               status: "",
               page: 1,
               limit: 50,
-              odf: "",
-              odt: "",
-              pdf: "",
-              pdt: "",
             })
           }
         />
-        </div>
       </TabsContent>
 
       <TabsContent value="history">
-        <OrdersTable
+        <HistoryOrdersTable
           orders={historyOrders}
           availableStatuses={HISTORY_STATUSES}
-          tab="history"
           filenamePrefix="orders(history)"
           search={historyFilters.search}
           onSearchChange={(v) => historyFilters.setFilter({ q: v, page: 1 })}
