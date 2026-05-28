@@ -1,6 +1,7 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -26,16 +27,39 @@ export function HistoryOrdersToolbar({
   onApply,
   onReset,
 }) {
+  const [localSearch, setLocalSearch] = useState(search);
+
+  useEffect(() => {
+    const id = setTimeout(() => onSearchChange(localSearch), 2000);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localSearch]);
+
+  function handleClear() {
+    setLocalSearch("");
+    onSearchChange("");
+  }
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="relative w-full sm:max-w-xs">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
           placeholder="Search orders…"
-          className="pl-8"
+          className={localSearch ? "pl-8 pr-8" : "pl-8"}
         />
+        {localSearch && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            aria-label="Clear search"
+          >
+            <X className="size-4" />
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

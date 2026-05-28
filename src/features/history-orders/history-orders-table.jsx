@@ -86,6 +86,7 @@ export function HistoryOrdersTable({
   return (
     <div className="space-y-3">
       <HistoryOrdersToolbar
+        key={search}
         search={search}
         onSearchChange={onSearchChange}
         filteredOrders={filtered}

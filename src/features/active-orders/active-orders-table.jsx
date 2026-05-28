@@ -65,6 +65,7 @@ export function ActiveOrdersTable({
   return (
     <div className="space-y-3">
       <ActiveOrdersToolbar
+        key={search}
         search={search}
         onSearchChange={onSearchChange}
         filteredOrders={filtered}
