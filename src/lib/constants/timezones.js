@@ -5,3 +5,9 @@ export const TIMEZONE_OPTIONS = [
 ];
 
 export const DEFAULT_TIMEZONE = "Asia/Jakarta";
+
+export const TIMEZONE_LABEL = {
+  "Asia/Jakarta": "WIB",
+  "Asia/Makassar": "WITA",
+  "Asia/Jayapura": "WIT",
+};

@@ -5,12 +5,12 @@ import Papa from "papaparse";
 import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
-import {
-  ORDER_STATUS_LABEL,
-} from "@/lib/constants/order-status";
-import { formatDate } from "@/lib/utils/format-date";
+import { ORDER_STATUS_LABEL } from "@/lib/constants/order-status";
+import { useFormatDate } from "@/hooks/use-format-date";
 
 export function ExportCsvButton({ orders, filenamePrefix = "orders" }) {
+  const { formatTs } = useFormatDate();
+
   function onExport() {
     if (!orders?.length) return;
     const rows = orders.map((o, idx) => ({
@@ -19,8 +19,8 @@ export function ExportCsvButton({ orders, filenamePrefix = "orders" }) {
       "Customer Name": o.customer_name,
       Menu: o.menu,
       Package: o.package,
-      "Order Date": formatDate(o.order_date, "yyyy-MM-dd"),
-      "Pickup Date": formatDate(o.pickup_date, "yyyy-MM-dd"),
+      "Order Date": formatTs(o.order_date, "yyyy-MM-dd HH:mm"),
+      "Pickup Date": formatTs(o.pickup_date, "yyyy-MM-dd HH:mm"),
       Quantity: o.quantity,
       Status: ORDER_STATUS_LABEL[o.status] ?? o.status,
     }));

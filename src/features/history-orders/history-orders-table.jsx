@@ -15,7 +15,9 @@ import { StatusBadge } from "@/components/common/status-badge";
 import { PaginationControls } from "@/components/common/pagination-controls";
 import { HistoryOrdersToolbar } from "@/features/history-orders/history-orders-toolbar";
 import { useDebounce } from "@/hooks/use-debounce";
-import { formatDate } from "@/lib/utils/format-date";
+import { useFormatDate } from "@/hooks/use-format-date";
+import { useTimezone } from "@/store/user-store";
+import { formatInTz } from "@/lib/utils/format-date";
 
 export function HistoryOrdersTable({
   orders,
@@ -36,6 +38,8 @@ export function HistoryOrdersTable({
   onResetFilters,
 }) {
   const router = useRouter();
+  const { formatTs } = useFormatDate();
+  const tz = useTimezone();
   const debouncedSearch = useDebounce(search, 250);
 
   const committed = {
@@ -57,10 +61,12 @@ export function HistoryOrdersTable({
         o.order_no.toLowerCase().includes(q);
       const matchesStatus =
         !statusFilter || statusFilter === "all" || o.status === statusFilter;
-      const matchesOrderFrom = !orderDateFrom || o.order_date >= orderDateFrom;
-      const matchesOrderTo = !orderDateTo || o.order_date <= orderDateTo;
-      const matchesPickupFrom = !pickupDateFrom || o.pickup_date >= pickupDateFrom;
-      const matchesPickupTo = !pickupDateTo || o.pickup_date <= pickupDateTo;
+      const orderDateLocal = formatInTz(o.order_date, tz, "yyyy-MM-dd");
+      const pickupDateLocal = formatInTz(o.pickup_date, tz, "yyyy-MM-dd");
+      const matchesOrderFrom = !orderDateFrom || orderDateLocal >= orderDateFrom;
+      const matchesOrderTo = !orderDateTo || orderDateLocal <= orderDateTo;
+      const matchesPickupFrom = !pickupDateFrom || pickupDateLocal >= pickupDateFrom;
+      const matchesPickupTo = !pickupDateTo || pickupDateLocal <= pickupDateTo;
       return (
         matchesQuery &&
         matchesStatus &&
@@ -70,7 +76,7 @@ export function HistoryOrdersTable({
         matchesPickupTo
       );
     });
-  }, [orders, debouncedSearch, statusFilter, orderDateFrom, orderDateTo, pickupDateFrom, pickupDateTo]);
+  }, [orders, debouncedSearch, statusFilter, orderDateFrom, orderDateTo, pickupDateFrom, pickupDateTo, tz]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -145,8 +151,8 @@ export function HistoryOrdersTable({
                   </TableCell>
                   <TableCell>{o.menu}</TableCell>
                   <TableCell>{o.package}</TableCell>
-                  <TableCell>{formatDate(o.order_date)}</TableCell>
-                  <TableCell>{formatDate(o.pickup_date)}</TableCell>
+                  <TableCell>{formatTs(o.order_date, "dd MMM yyyy, HH:mm")}</TableCell>
+                  <TableCell>{formatTs(o.pickup_date, "dd MMM yyyy, HH:mm")}</TableCell>
                   <TableCell className="text-right tabular-nums">{o.quantity}</TableCell>
                   <TableCell>
                     <StatusBadge status={o.status} />

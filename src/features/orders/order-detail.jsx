@@ -11,7 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { StatusBadge } from "@/components/common/status-badge";
-import { formatDate } from "@/lib/utils/format-date";
 import { useFormatDate } from "@/hooks/use-format-date";
 
 function DetailField({ label, value }) {
@@ -63,11 +62,11 @@ export function OrderDetail({ order }) {
             <DetailField label="Jumlah" value={order.quantity} />
             <DetailField
               label="Tanggal Order"
-              value={formatDate(order.order_date)}
+              value={formatTs(order.order_date)}
             />
             <DetailField
               label="Tanggal Pickup"
-              value={formatDate(order.pickup_date)}
+              value={formatTs(order.pickup_date)}
             />
             <DetailField
               label="Dibuat pada"

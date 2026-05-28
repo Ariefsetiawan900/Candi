@@ -4,6 +4,8 @@ import { useEffect, useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { parseISO } from "date-fns";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,29 +26,24 @@ import {
   ORDER_STATUSES,
   ORDER_STATUS_LABEL,
 } from "@/lib/constants/order-status";
-import { todayISO } from "@/lib/utils/format-date";
+import { useTimezone } from "@/store/user-store";
 import {
   createOrderAction,
   updateOrderAction,
 } from "@/features/orders/actions";
 
-// Statuses available when editing (completed is set only via "Selesaikan" action)
 const EDIT_STATUSES = ORDER_STATUSES.filter((s) => s !== "completed");
 
-const CREATE_DEFAULTS = {
-  customer_name: "",
-  menu: "",
-  package: "",
-  order_date: todayISO(),
-  pickup_date: todayISO(),
-  quantity: 1,
-  status: "pending",
-  note: "",
-};
+function toDatetimeLocal(value, tz) {
+  if (!value) return "";
+  const d = value instanceof Date ? value : parseISO(String(value));
+  return formatInTimeZone(d, tz, "yyyy-MM-dd'T'HH:mm");
+}
 
 export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
   const isEditMode = !!order;
   const router = useRouter();
+  const tz = useTimezone();
   const [isPending, startTransition] = useTransition();
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -57,18 +54,31 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
     else setInternalOpen(val);
   }
 
+  const nowInTz = formatInTimeZone(new Date(), tz, "yyyy-MM-dd'T'HH:mm");
+
+  const createDefaults = {
+    customer_name: "",
+    menu: "",
+    package: "",
+    order_date: nowInTz,
+    pickup_date: nowInTz,
+    quantity: 1,
+    status: "pending",
+    note: "",
+  };
+
   const editDefaults = isEditMode
     ? {
         customer_name: order.customer_name,
         menu: order.menu,
         package: order.package,
-        order_date: order.order_date,
-        pickup_date: order.pickup_date,
+        order_date: toDatetimeLocal(order.order_date, tz),
+        pickup_date: toDatetimeLocal(order.pickup_date, tz),
         quantity: order.quantity,
         status: order.status,
         note: order.note ?? "",
       }
-    : CREATE_DEFAULTS;
+    : createDefaults;
 
   const {
     register,
@@ -78,7 +88,7 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(orderSchema),
-    defaultValues: isEditMode ? editDefaults : CREATE_DEFAULTS,
+    defaultValues: isEditMode ? editDefaults : createDefaults,
   });
 
   useEffect(() => {
@@ -87,14 +97,18 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
 
   function handleClose() {
     setOpen(false);
-    reset(isEditMode ? editDefaults : CREATE_DEFAULTS);
+    reset(isEditMode ? editDefaults : createDefaults);
   }
 
   function onSubmit(data) {
     startTransition(async () => {
+      const orderDate = fromZonedTime(data.order_date, tz).toISOString();
+      const pickupDate = fromZonedTime(data.pickup_date, tz).toISOString();
+      const payload = { ...data, order_date: orderDate, pickup_date: pickupDate };
+
       const res = isEditMode
-        ? await updateOrderAction({ id: order.id, ...data })
-        : await createOrderAction(data);
+        ? await updateOrderAction({ id: order.id, ...payload })
+        : await createOrderAction(payload);
 
       if (res?.error) {
         toast.error(res.error);
@@ -179,7 +193,11 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="order_date">Order date</Label>
-              <Input id="order_date" type="date" {...register("order_date")} />
+              <Input
+                id="order_date"
+                type="datetime-local"
+                {...register("order_date")}
+              />
               {errors.order_date && (
                 <p className="text-xs text-destructive">
                   {errors.order_date.message}
@@ -190,7 +208,7 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
               <Label htmlFor="pickup_date">Pickup date</Label>
               <Input
                 id="pickup_date"
-                type="date"
+                type="datetime-local"
                 {...register("pickup_date")}
               />
               {errors.pickup_date && (
@@ -201,7 +219,6 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
             </div>
           </div>
 
-          {/* Quantity always shown; Status only in edit mode */}
           <div className={isEditMode ? "grid grid-cols-2 gap-3" : ""}>
             <div className="space-y-1.5">
               <Label htmlFor="quantity">Quantity</Label>
@@ -243,7 +260,6 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
             )}
           </div>
 
-          {/* Note field */}
           <div className="space-y-1.5">
             <Label htmlFor="note">
               Note{" "}

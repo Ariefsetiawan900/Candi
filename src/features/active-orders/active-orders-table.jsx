@@ -16,7 +16,7 @@ import { OrderActionsCell } from "@/features/orders/order-actions-cell";
 import { ActiveOrdersToolbar } from "@/features/active-orders/active-orders-toolbar";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useUser } from "@/components/providers/user-provider";
-import { formatDate } from "@/lib/utils/format-date";
+import { useFormatDate } from "@/hooks/use-format-date";
 
 export function ActiveOrdersTable({
   orders,
@@ -34,6 +34,7 @@ export function ActiveOrdersTable({
 }) {
   const { profile } = useUser();
   const isAdmin = profile?.role === "admin";
+  const { formatTs } = useFormatDate();
 
   const debouncedSearch = useDebounce(search, 250);
 
@@ -121,8 +122,8 @@ export function ActiveOrdersTable({
                   </TableCell>
                   <TableCell>{o.menu}</TableCell>
                   <TableCell>{o.package}</TableCell>
-                  <TableCell>{formatDate(o.order_date)}</TableCell>
-                  <TableCell>{formatDate(o.pickup_date)}</TableCell>
+                  <TableCell>{formatTs(o.order_date, "dd MMM yyyy, HH:mm")}</TableCell>
+                  <TableCell>{formatTs(o.pickup_date, "dd MMM yyyy, HH:mm")}</TableCell>
                   <TableCell className="text-right tabular-nums">{o.quantity}</TableCell>
                   <TableCell>
                     <StatusBadge status={o.status} />
