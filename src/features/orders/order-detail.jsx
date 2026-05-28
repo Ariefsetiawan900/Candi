@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { StatusBadge } from "@/components/common/status-badge";
 import { formatDate } from "@/lib/utils/format-date";
+import { useFormatDate } from "@/hooks/use-format-date";
 
 function DetailField({ label, value }) {
   return (
@@ -26,6 +27,7 @@ function DetailField({ label, value }) {
 
 export function OrderDetail({ order }) {
   const router = useRouter();
+  const { formatTs } = useFormatDate();
 
   return (
     <div className="space-y-6">
@@ -69,26 +71,18 @@ export function OrderDetail({ order }) {
             />
             <DetailField
               label="Dibuat pada"
-              value={formatDate(order.created_at, "dd MMM yyyy, HH:mm")}
+              value={formatTs(order.created_at)}
             />
             {order.status === "completed" && (
               <DetailField
                 label="Diselesaikan pada"
-                value={
-                  order.completed_at
-                    ? formatDate(order.completed_at, "dd MMM yyyy, HH:mm")
-                    : "—"
-                }
+                value={formatTs(order.completed_at)}
               />
             )}
             {order.status === "cancelled" && (
               <DetailField
                 label="Dibatalkan pada"
-                value={
-                  order.cancelled_at
-                    ? formatDate(order.cancelled_at, "dd MMM yyyy, HH:mm")
-                    : "—"
-                }
+                value={formatTs(order.cancelled_at)}
               />
             )}
           </div>

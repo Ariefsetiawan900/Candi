@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ChangePasswordForm } from "@/features/auth/change-password-form";
+import { TimezoneSelect } from "@/features/settings/timezone-select";
 
 export const metadata = { title: "Settings — CANDI" };
 
@@ -39,6 +40,24 @@ export default async function SettingsPage() {
           <div>
             <p className="text-muted-foreground">Role</p>
             <p className="font-medium capitalize">{profile?.role}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Preferences</CardTitle>
+          <CardDescription>Display settings for your account.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Timezone</p>
+              <p className="text-xs text-muted-foreground">
+                Affects how timestamps are displayed across the app.
+              </p>
+            </div>
+            <TimezoneSelect />
           </div>
         </CardContent>
       </Card>

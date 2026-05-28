@@ -18,11 +18,12 @@ import { PaginationControls } from "@/components/common/pagination-controls";
 import { ResetPasswordButton } from "@/features/members/reset-password-button";
 import { ToggleStatusButton } from "@/features/members/toggle-status-button";
 import { useDebounce } from "@/hooks/use-debounce";
-import { formatDate } from "@/lib/utils/format-date";
+import { useFormatDate } from "@/hooks/use-format-date";
 
 const DEFAULT_PAGE_SIZE = 50;
 
 export function MembersTable({ members }) {
+  const { formatTs } = useFormatDate();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
@@ -103,9 +104,9 @@ export function MembersTable({ members }) {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell>{formatDate(m.created_at)}</TableCell>
+                  <TableCell>{formatTs(m.created_at)}</TableCell>
                   <TableCell>
-                    {m.updated_at ? formatDate(m.updated_at) : "—"}
+                    {m.updated_at ? formatTs(m.updated_at) : "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
