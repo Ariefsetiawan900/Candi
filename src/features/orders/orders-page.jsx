@@ -78,15 +78,20 @@ export function OrdersPage({ activeOrders, historyOrders }) {
 
   return (
     <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center">
         <TabsList>
           <TabsTrigger value="active">Active</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
-        {isAdmin && <OrderFormModal />}
       </div>
 
       <TabsContent value="active">
+        <div className="space-y-3">
+          {isAdmin && (
+            <div className="flex justify-end">
+              <OrderFormModal />
+            </div>
+          )}
         <OrdersTable
           orders={activeOrders}
           availableStatuses={ACTIVE_STATUSES}
@@ -126,6 +131,7 @@ export function OrdersPage({ activeOrders, historyOrders }) {
             })
           }
         />
+        </div>
       </TabsContent>
 
       <TabsContent value="history">

@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DateRangePicker } from "@/components/common/date-range-picker";
 import {
   Table,
   TableBody,
@@ -152,46 +153,20 @@ export function OrdersTable({
                 {/* Date filters — history tab only */}
                 {tab === "history" && (
                   <>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium">Order date — start</Label>
-                      <Input
-                        type="date"
-                        value={draft.orderDateFrom}
-                        onChange={(e) =>
-                          setDraft((d) => ({ ...d, orderDateFrom: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium">Order date — end</Label>
-                      <Input
-                        type="date"
-                        value={draft.orderDateTo}
-                        onChange={(e) =>
-                          setDraft((d) => ({ ...d, orderDateTo: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium">Pickup date — start</Label>
-                      <Input
-                        type="date"
-                        value={draft.pickupDateFrom}
-                        onChange={(e) =>
-                          setDraft((d) => ({ ...d, pickupDateFrom: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-sm font-medium">Pickup date — end</Label>
-                      <Input
-                        type="date"
-                        value={draft.pickupDateTo}
-                        onChange={(e) =>
-                          setDraft((d) => ({ ...d, pickupDateTo: e.target.value }))
-                        }
-                      />
-                    </div>
+                    <DateRangePicker
+                      label="Order Date"
+                      from={draft.orderDateFrom}
+                      to={draft.orderDateTo}
+                      onFromChange={(v) => setDraft((d) => ({ ...d, orderDateFrom: v }))}
+                      onToChange={(v) => setDraft((d) => ({ ...d, orderDateTo: v }))}
+                    />
+                    <DateRangePicker
+                      label="Pickup Date"
+                      from={draft.pickupDateFrom}
+                      to={draft.pickupDateTo}
+                      onFromChange={(v) => setDraft((d) => ({ ...d, pickupDateFrom: v }))}
+                      onToChange={(v) => setDraft((d) => ({ ...d, pickupDateTo: v }))}
+                    />
                   </>
                 )}
               </>
