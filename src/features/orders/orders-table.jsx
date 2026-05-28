@@ -211,13 +211,14 @@ export function OrdersTable({
               <TableHead>Pickup Date</TableHead>
               <TableHead className="text-right">Qty</TableHead>
               <TableHead>Status</TableHead>
-              {isAdmin && <TableHead>Actions</TableHead>}
+              <TableHead>Note</TableHead>
+              {isAdmin && tab === "active" && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {pageItems.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 9 : 8} className="p-0">
+                <TableCell colSpan={isAdmin && tab === "active" ? 10 : 9} className="p-0">
                   <EmptyState
                     title="No orders"
                     description={
@@ -248,7 +249,13 @@ export function OrdersTable({
                   <TableCell>
                     <StatusBadge status={o.status} />
                   </TableCell>
-                  {isAdmin && (
+                  <TableCell
+                    className="max-w-40 truncate text-sm text-muted-foreground"
+                    title={o.note ?? ""}
+                  >
+                    {o.note || "—"}
+                  </TableCell>
+                  {isAdmin && tab === "active" && (
                     <TableCell>
                       <OrderActionsCell order={o} />
                     </TableCell>

@@ -18,7 +18,7 @@ export default async function HomePage() {
       supabase
         .from("orders")
         .select(
-          "id, order_no, customer_name, menu, package, order_date, pickup_date, quantity, status, created_at"
+          "id, order_no, customer_name, menu, package, order_date, pickup_date, quantity, status, note, created_at"
         )
         .order("created_at", { ascending: false }),
       supabase

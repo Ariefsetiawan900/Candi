@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,7 @@ import { Modal } from "@/components/common/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -29,6 +30,9 @@ import {
   updateOrderAction,
 } from "@/features/orders/actions";
 
+// Statuses available when editing (completed is set only via "Selesaikan" action)
+const EDIT_STATUSES = ORDER_STATUSES.filter((s) => s !== "completed");
+
 const CREATE_DEFAULTS = {
   customer_name: "",
   menu: "",
@@ -37,6 +41,7 @@ const CREATE_DEFAULTS = {
   pickup_date: todayISO(),
   quantity: 1,
   status: "pending",
+  note: "",
 };
 
 export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
@@ -61,6 +66,7 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
         pickup_date: order.pickup_date,
         quantity: order.quantity,
         status: order.status,
+        note: order.note ?? "",
       }
     : CREATE_DEFAULTS;
 
@@ -195,7 +201,8 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* Quantity always shown; Status only in edit mode */}
+          <div className={isEditMode ? "grid grid-cols-2 gap-3" : ""}>
             <div className="space-y-1.5">
               <Label htmlFor="quantity">Quantity</Label>
               <Input
@@ -210,27 +217,50 @@ export function OrderFormModal({ order, open: controlledOpen, onOpenChange }) {
                 </p>
               )}
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="status">Status</Label>
-              <Controller
-                control={control}
-                name="status"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger id="status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ORDER_STATUSES.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {ORDER_STATUS_LABEL[s]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+
+            {isEditMode && (
+              <div className="space-y-1.5">
+                <Label htmlFor="status">Status</Label>
+                <Controller
+                  control={control}
+                  name="status"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger id="status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {EDIT_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>
+                            {ORDER_STATUS_LABEL[s]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Note field */}
+          <div className="space-y-1.5">
+            <Label htmlFor="note">
+              Note{" "}
+              <span className="font-normal text-muted-foreground">
+                (opsional)
+              </span>
+            </Label>
+            <Textarea
+              id="note"
+              rows={3}
+              maxLength={100}
+              placeholder="Catatan tambahan…"
+              {...register("note")}
+            />
+            {errors.note && (
+              <p className="text-xs text-destructive">{errors.note.message}</p>
+            )}
           </div>
 
           <Modal.Footer>

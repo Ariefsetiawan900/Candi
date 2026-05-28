@@ -18,7 +18,7 @@ export async function createOrderAction(formData) {
   const supabase = await createClient();
   const { error } = await supabase
     .from("orders")
-    .insert({ ...parsed.data, created_by: user.id });
+    .insert({ ...parsed.data, status: "pending", created_by: user.id });
 
   if (error) return { error: error.message };
 

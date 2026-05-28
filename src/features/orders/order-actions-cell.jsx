@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -45,14 +45,17 @@ export function OrderActionsCell({ order }) {
       {canComplete && (
         <>
           <Button
-            variant="ghost"
-            size="icon"
-            className="size-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-            aria-label="Mark as completed"
+            variant="outline"
+            size="sm"
+            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-300 dark:hover:bg-emerald-950/30"
             onClick={() => setCompleteOpen(true)}
             disabled={isPendingComplete}
           >
-            <CheckCircle className="size-4" />
+            {isPendingComplete ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              "Selesaikan"
+            )}
           </Button>
           <ModalConfirm
             open={completeOpen}

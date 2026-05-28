@@ -26,6 +26,7 @@ create table if not exists public.orders (
   pickup_date date not null,
   quantity int not null check (quantity > 0),
   status text not null check (status in ('pending','processing','ready','completed','cancelled')) default 'pending',
+  note text,
   created_by uuid references auth.users(id),
   created_at timestamptz default now()
 );
